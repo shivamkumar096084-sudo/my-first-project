@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>खेल घर</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e8f3ef;--ink:#12343b;--tile:#fff;--x:#e4572e;--o:#2e86ab;--line:#b9d6cd;--mute:#5c7a80;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f2226;--ink:#e3f1ee;--tile:#17363c;--x:#ff7a55;--o:#5ab8dc;--line:#2c5a63;--mute:#8fb3ba}}
+:root[data-theme="dark"]{--bg:#0f2226;--ink:#e3f1ee;--tile:#17363c;--x:#ff7a55;--o:#5ab8dc;--line:#2c5a63;--mute:#8fb3ba}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Baloo 2","Noto Sans Devanagari",system-ui,sans-serif;min-height:100vh;padding:20px 16px;max-width:520px;margin-inline:auto}
+h1{font-size:2rem;margin:0}
+.sub{margin:0 0 16px;color:var(--mute)}
+#q{width:100%;width:-webkit-fill-available;font-size:1.1rem;padding:12px 14px;margin-bottom:14px;text-align:left}
+#grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{border:2px solid var(--line);border-radius:16px;background:var(--tile);color:var(--ink);padding:16px 8px;font:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.card .e{font-size:2.6rem;line-height:1.2}
+.card b{font-size:1.2rem}
+.card small{color:var(--mute)}
+.card.soon{opacity:.55;cursor:default}
+button:focus-visible{outline:3px solid var(--o);outline-offset:2px}
+#back{border:0;background:none;color:var(--ink);font:600 1.1rem inherit;font-family:inherit;cursor:pointer;padding:4px 0;margin-bottom:8px}
+#game{text-align:center}
+.msg{min-height:1.8em;font-size:1.2rem;margin:8px 0 14px}
+.bd{display:grid;gap:10px;margin:0 auto}
+.cell{aspect-ratio:1;border:2px solid var(--line);border-radius:14px;background:var(--tile);font:800 2.6rem "Baloo 2",system-ui,sans-serif;cursor:pointer;color:var(--ink)}
+.cell.x{color:var(--x)}.cell.o{color:var(--o)}.cell.win{border-color:var(--ink);border-width:4px}
+.btn{border:0;border-radius:12px;padding:10px 22px;background:var(--ink);color:var(--bg);font:600 1.1rem "Baloo 2",system-ui,sans-serif;cursor:pointer;margin-top:14px}
+input{font:inherit;font-size:1.3rem;width:120px;text-align:center;padding:8px;border-radius:10px;border:2px solid var(--line);background:var(--tile);color:var(--ink)}
+</style>
+</head>
+<body>
+<div id="home">
+<h1>खेल घर</h1>
+<p class="sub">कोई भी गेम चुनें और खेलें, बिल्कुल फ्री</p>
+<input id="q" type="search" placeholder="गेम खोजें" aria-label="गेम खोजें">
+<p id="none" class="sub" hidden>कोई गेम नहीं मिला</p>
+<div id="grid"></div>
+</div>
+<div id="game" hidden>
+<button id="back">← सभी गेम</button>
+<h2 id="gt" style="margin:0"></h2>
+<div id="stage"></div>
+</div>
+<script>
+var home=document.getElementById('home'),gm=document.getElementById('game'),stage=document.getElementById('stage');
+var games=[
+{n:'टिक-टैक-टो',e:'⭕',t:'2 खिलाड़ी',f:ttt},
+{n:'याददाश्त',e:'🧠',t:'1 खिलाड़ी',f:mem},
+{n:'अंक अनुमान',e:'🔢',t:'1 खिलाड़ी',f:gu},
+/* नया गेम जोड़ने के लिए नीचे जैसी एक लाइन लिखें (अपने गेम का URL u में डालें):
+{n:'गेम का नाम',e:'🐍',t:'1 खिलाड़ी',u:'https://आपका-गेम-का-लिंक'}, */
+{n:'लूडो',e:'🎲',t:'जल्द आ रहा है'},
+{n:'शतरंज',e:'♟️',t:'जल्द आ रहा है'},
+{n:'क्विज़',e:'❓',t:'जल्द आ रहा है'}];
+var grid=document.getElementById('grid');
+games.forEach(function(g){
+var c=document.createElement('button');c.className='card'+(g.f||g.u?'':' soon');
+c.innerHTML='<span class="e">'+g.e+'</span><b>'+g.n+'</b><small>'+g.t+'</small>';
+if(g.f||g.u)c.onclick=function(){home.hidden=true;gm.hidden=false;document.getElementById('gt').textContent=g.n;stage.innerHTML='';
+if(g.f)g.f(stage);else{var fr=document.createElement('iframe');fr.src=g.u;fr.title=g.n;
+fr.setAttribute('sandbox','allow-scripts allow-same-origin allow-pointer-lock');
+fr.style.cssText='width:100%;height:70vh;border:2px solid var(--line);border-radius:14px;background:#fff';stage.appendChild(fr)}};
+else c.setAttribute('aria-disabled','true');
+c.dataset.n=g.n.toLowerCase();grid.appendChild(c)});
+document.getElementById('q').addEventListener('input',function(e){
+var k=e.target.value.trim().toLowerCase(),shown=0;
+Array.prototype.forEach.call(grid.children,function(c){var ok=c.dataset.n.indexOf(k)>-1;c.style.display=ok?'':'none';if(ok)shown++});
+document.getElementById('none').hidden=shown>0});
+document.getElementById('back').onclick=function(){gm.hidden=true;home.hidden=false;stage.innerHTML=''};
+
+function ttt(el){
+var L=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]],b,turn,over;
+el.innerHTML='<p class="msg"></p><div class="bd" style="grid-template-columns:repeat(3,1fr);width:min(88vw,340px)"></div><button class="btn">फिर से खेलें</button>';
+var m=el.querySelector('.msg'),bd=el.querySelector('.bd'),cs=[];
+for(var i=0;i<9;i++){var c=document.createElement('button');c.className='cell';c.dataset.i=i;bd.appendChild(c);cs.push(c)}
+function s(){b=Array(9).fill('');turn='X';over=false;cs.forEach(function(c){c.textContent='';c.className='cell'});m.textContent='खिलाड़ी X की बारी'}
+bd.onclick=function(e){var i=e.target.dataset.i;if(i===undefined||over||b[i])return;
+b[i]=turn;cs[i].textContent=turn;cs[i].classList.add(turn.toLowerCase());
+var w=L.find(function(l){return b[l[0]]&&b[l[0]]===b[l[1]]&&b[l[0]]===b[l[2]]});
+if(w){over=true;w.forEach(function(k){cs[k].classList.add('win')});m.textContent='खिलाड़ी '+turn+' जीत गया!';return}
+if(b.every(Boolean)){over=true;m.textContent='बराबरी रही';return}
+turn=turn==='X'?'O':'X';m.textContent='खिलाड़ी '+turn+' की बारी'};
+el.querySelector('.btn').onclick=s;s()}
+
+function mem(el){
+var E=['🍎','🍌','🍇','🍒','🍉','🥭','🍋','🍓'],d=E.concat(E).sort(function(){return Math.random()-.5}),open=[],lock=false,moves=0,found=0;
+el.innerHTML='<p class="msg">जोड़ियाँ मिलाएँ</p><div class="bd" style="grid-template-columns:repeat(4,1fr);width:min(90vw,360px)"></div><button class="btn">फिर से खेलें</button>';
+var m=el.querySelector('.msg'),bd=el.querySelector('.bd');
+d.forEach(function(v,i){var c=document.createElement('button');c.className='cell';c.style.fontSize='2rem';c.dataset.i=i;c.textContent='?';bd.appendChild(c)});
+bd.onclick=function(e){var i=e.target.dataset.i;if(i===undefined||lock)return;var c=e.target;
+if(c.dataset.done||open.indexOf(c)>-1)return;
+c.textContent=d[i];open.push(c);
+if(open.length===2){moves++;lock=true;var a=open[0],b=open[1];
+if(d[a.dataset.i]===d[b.dataset.i]){a.dataset.done=b.dataset.done=1;a.classList.add('win');b.classList.add('win');open=[];lock=false;found++;
+if(found===8)m.textContent='शाबाश! '+moves+' चालों में पूरा हुआ'}
+else setTimeout(function(){a.textContent=b.textContent='?';open=[];lock=false},800)}};
+el.querySelector('.btn').onclick=function(){mem(el)}}
+
+function gu(el){
+var n=1+Math.floor(Math.random()*100),t=0,done=false;
+el.innerHTML='<p class="msg">1 से 100 के बीच का अंक सोचा है। पहचानें!</p><input type="number" inputmode="numeric" min="1" max="100" aria-label="आपका अनुमान"><br><button class="btn" id="go">जाँचें</button> <button class="btn" id="re">नया खेल</button>';
+var m=el.querySelector('.msg'),inp=el.querySelector('input');
+el.querySelector('#go').onclick=function(){if(done)return;var v=parseInt(inp.value,10);
+if(!(v>=1&&v<=100)){m.textContent='1 से 100 के बीच का अंक लिखें';return}
+t++;if(v===n){done=true;m.textContent='सही! '+t+' कोशिश में मिला'}
+else m.textContent=(v<n?'अंक इससे बड़ा है':'अंक इससे छोटा है')+' (कोशिश '+t+')';inp.value=''};
+el.querySelector('#re').onclick=function(){gu(el)}}
+</script>
+</body>
+</html>
